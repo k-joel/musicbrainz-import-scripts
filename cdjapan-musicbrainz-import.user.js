@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         cdjapan-musicbrainz-import
+// @name         Import CDJapan releases to MusicBrainz
 // @namespace    https://github.com/k-joel/musicbrainz-import-scripts
 // @version      0.1
-// @description  Import CDJapan releases to MusicBrainz
+// @description  Adds a button to CDJapan's product page to import that release into MusicBrainz
 // @author       k-joel
 // @downloadURL  https://github.com/k-joel/musicbrainz-import-scripts/raw/main/cdjapan-musicbrainz-import.user.js
 // @updateURL    https://github.com/k-joel/musicbrainz-import-scripts/raw/main/cdjapan-musicbrainz-import.user.js
@@ -25,27 +25,17 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 
 $(document).ready(function () {
     MBImportStyle();
-    let release_url = window.location.href.replace('/?.*$/', '').replace('/#.*$/', '');
+    let releaseUrl = window.location.href.replace('/?.*$/', '').replace('/#.*$/', '');
 
-    let release = makeReleaseInfo(release_url);
+    let release = makeReleaseInfo(releaseUrl);
     let buttons = 
-        makeImportButton(release, release_url) + 
+        makeImportButton(release, releaseUrl) + 
         makeSearchButton(release);
 
     insertImportLinks(buttons);
 });
 
-let keys = {
-    catNo: "Catalog No.",
-    isbn: "JAN/ISBN",
-    type: "Product Type",
-    discs: "Number of Discs",
-    label: "Label/Distributor",
-};
-
-const propKeys = [keys.catNo, keys.isbn, keys.type, keys.discs, keys.label];
-
-function makeReleaseInfo(release_url) {
+function makeReleaseInfo(releaseUrl) {
     let release = {
         artist_credit: '',
         title: '',
@@ -82,26 +72,23 @@ function makeReleaseInfo(release_url) {
         release.artist_credit = MBImport.makeArtistCredits([artist]);
     }
 
-    // Primary Type
-    let media = $("div.product_info span.media").text().trim();
-    if (media.match(/.*(Album|LP).*/)) {
-        release.type = "Album";
-    }
-    else if (media.match(/.*EP.*/)) {
-        release.type = "EP";
-    }
-    else {
-        release.type = "Other";
-    }
-
     // Release Date
-    let release_date = $("table.basic-info span[itemprop='releaseDate']").text().trim();
-    let date = new Date(release_date);    
+    let releaseDate = $("table.basic-info span[itemprop='releaseDate']").text().trim();
+    let date = new Date(releaseDate);    
     release.day = date.getDate();
     release.month = date.getMonth() + 1;
     release.year = date.getFullYear();
 
     // Get properties in table
+    const tableKeys = {
+        catNo: "Catalog No.",
+        isbn: "JAN/ISBN",
+        type: "Product Type",
+        discs: "Number of Discs",
+        label: "Label/Distributor",
+    };
+
+    const propKeys = Object.values(tableKeys);
     let props = {};
     $("table.prod-spec tbody tr").each(function(index, row) {
         let prop = row.cells.item(0).innerHTML.trim();
@@ -113,19 +100,19 @@ function makeReleaseInfo(release_url) {
 
     // Format
     let link_type = MBImport.URL_TYPES;
-    let format = props[keys.type];
+    let format = props[tableKeys.type];
     if (format.match(/^vinyl/i)) {
         release.country = 'JP';
         release.format = 'Vinyl';
         release.urls.push({
-            url: release_url,
+            url: releaseUrl,
             link_type: link_type.purchase_for_mail_order,
         });
     } else if (format.match(/^cd/i)) {
         release.country = 'JP';
         release.format = 'CD';
         release.urls.push({
-            url: release_url,
+            url: releaseUrl,
             link_type: link_type.purchase_for_mail_order,
         });
     } else {
@@ -133,19 +120,30 @@ function makeReleaseInfo(release_url) {
         release.packaging = 'None';
         release.format = 'Digital Media';
         release.urls.push({
-            url: release_url,
+            url: releaseUrl,
             link_type: link_type.purchase_for_download,
         });
     }
 
+    // Primary Type
+    if (format.match(/(cd|lp)/i)) {
+        release.type = "Album";
+    }
+    else if (format.match(/ep/i)) {
+        release.type = "EP";
+    }
+    else {
+        release.type = "Other";
+    }
+
     // Barcode
-    release.barcode = props[keys.isbn];
+    release.barcode = props[tableKeys.isbn];
 
     // Label
     release.labels.push({
-        name: props[keys.label],
+        name: props[tableKeys.label],
         mbid: 0,
-        catno: props[keys.catNo]
+        catno: props[tableKeys.catNo]
     });
 
     // Comment
@@ -156,9 +154,8 @@ function makeReleaseInfo(release_url) {
     // Tracks
     var tracks = [];
     $("table.tracklist tbody").children().each(function () {
-        trackid = this.lastElementChild.firstElementChild.innerHTML;
         trackname = this.lastElementChild.lastElementChild.innerHTML;
-
+        
         let track_artists = [artist];
 
         let ac = {
@@ -184,9 +181,9 @@ function makeReleaseInfo(release_url) {
     return release;
 }
 
-function makeImportButton(release, release_url) {
-    let edit_note = MBImport.makeEditNote(release_url, "CD Japan", "", "https://github.com/k-joel/musicbrainz-import-scripts");
-    let parameters = MBImport.buildFormParameters(release, edit_note);
+function makeImportButton(release, releaseUrl) {
+    let editNote = MBImport.makeEditNote(releaseUrl, "CD Japan", "", "https://github.com/k-joel/musicbrainz-import-scripts");
+    let parameters = MBImport.buildFormParameters(release, editNote);
     return MBImport.buildFormHTML(parameters);
 }
 
