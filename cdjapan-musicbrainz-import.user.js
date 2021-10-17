@@ -154,8 +154,13 @@ function makeReleaseInfo(releaseUrl) {
     // Tracks
     var tracks = [];
     $("table.tracklist tbody").children().each(function () {
-        trackname = this.lastElementChild.lastElementChild.innerHTML;
-        
+        titleChildren = this.lastElementChild.children;
+        trackname = titleChildren[0].innerHTML.trim();
+        if (trackname == '') {
+            trackname = titleChildren[1].innerHTML.trim();
+        }
+
+
         let track_artists = [artist];
 
         let ac = {
