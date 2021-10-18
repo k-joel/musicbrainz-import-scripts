@@ -28,14 +28,17 @@ $(document).ready(function () {
     let releaseUrl = window.location.href.replace('/?.*$/', '').replace('/#.*$/', '');
 
     let release = makeReleaseInfo(releaseUrl);
+    let releaseLatin = makeReleaseInfo(releaseUrl, true);
     let buttons = 
         makeImportButton(release, releaseUrl) + 
-        makeSearchButton(release);
+        makeImportButton(releaseLatin, releaseUrl).replace('Import into MB', 'Import w/ Latin titles') +
+        makeSearchButton(release).replace("<span>Search in MB</span>", 
+            "<i class='fa fa-search'></i>");
 
     insertImportLinks(buttons);
 });
 
-function makeReleaseInfo(releaseUrl) {
+function makeReleaseInfo(releaseUrl, preferLatin=false) {
     let release = {
         artist_credit: '',
         title: '',
@@ -55,6 +58,12 @@ function makeReleaseInfo(releaseUrl) {
         labels: [],
         discs: [],
     };
+
+    if (preferLatin) {
+        release.status = "pseudo-release";
+        release.language = "mul";
+        release.script = "";
+    }
 
     // Image url
     let imgUrl = "https:" + $("#prod-thumb img").attr("src");
@@ -85,7 +94,7 @@ function makeReleaseInfo(releaseUrl) {
         isbn: "JAN/ISBN",
         type: "Product Type",
         discs: "Number of Discs",
-        label: "Label/Distributor",
+        //label: "Label/Distributor",
     };
 
     const propKeys = Object.values(tableKeys);
@@ -141,7 +150,7 @@ function makeReleaseInfo(releaseUrl) {
 
     // Label
     release.labels.push({
-        name: props[tableKeys.label],
+        name: '', //props[tableKeys.label],
         mbid: 0,
         catno: props[tableKeys.catNo]
     });
@@ -153,13 +162,18 @@ function makeReleaseInfo(releaseUrl) {
 
     // Tracks
     var tracks = [];
+    
     $("table.tracklist tbody").children().each(function () {
         titleChildren = this.lastElementChild.children;
-        trackname = titleChildren[0].innerHTML.trim();
-        if (trackname == '') {
+        if (preferLatin) {
+            trackname = titleChildren[0].innerHTML.trim();
+            if (trackname == '') {
+                trackname = titleChildren[1].innerHTML.trim();
+            }
+        }
+        else {
             trackname = titleChildren[1].innerHTML.trim();
         }
-
 
         let track_artists = [artist];
 
@@ -197,5 +211,12 @@ function makeSearchButton(release) {
 }
 
 function insertImportLinks(buttons) {
-    $("div.buttons").append($(`<div id="mb_buttons" class="sub-buttons">${buttons}</div>`));
+    $("div.buttons").append($(`<div id="mb-buttons" class="sub-buttons">${buttons}</div>`));
+    $("form.musicbrainz_import_add").css({
+        'padding-right': '2px'
+    });
+    $("form.musicbrainz_import_search i").css({
+        'padding': '0 8px',
+        'font-size': 'inherit',
+    });
 }
