@@ -94,8 +94,7 @@ function makeReleaseInfo(releaseUrl, preferLatin=false) {
         catNo: "Catalog No.",
         isbn: "JAN/ISBN",
         type: "Product Type",
-        discs: "Number of Discs",
-        //label: "Label/Distributor",
+        label: "Label/Distributor",
     };
 
     const propKeys = Object.values(tableKeys);
@@ -212,12 +211,17 @@ function makeSearchButton(release) {
 }
 
 function insertImportLinks(buttons) {
-    $("div.buttons").append($(`<div id="mb-buttons" class="sub-buttons">${buttons}</div>`));
-    $("form.musicbrainz_import_add").css({
-        'padding-right': '2px'
+    $("div.buttons").append($(`<div id="mb-buttons">${buttons}</div>`));
+    $("div#mb-buttons").css({
+        'display': 'grid',
+        'grid-template-columns': 'auto auto auto',
+        'margin-top': '6.5px',
     });
-    $("form.musicbrainz_import_search i").css({
-        'padding': '0 8px',
-        'font-size': 'inherit',
+    $("form.musicbrainz_import button").css({
+        'height': '40px',
+        'width': '100%',
+    });    
+    $("form.musicbrainz_import_add").css({
+        'padding-right': '2px',
     });
 }
